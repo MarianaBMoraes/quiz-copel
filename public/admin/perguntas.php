@@ -220,14 +220,12 @@ $error = $_GET['erro'] ?? null;
 
             <div class="admin-actions">
 
-                <button
-                    type="button"
-                    class="admin-button-primary"
-                    disabled
-                    title="Será liberado na próxima etapa."
-                >
-                    Nova pergunta
-                </button>
+                <a
+    href="/admin/nova-pergunta.php?quiz_id=<?= (int) $quiz['id'] ?>"
+    class="admin-button-primary admin-button-link"
+>
+    Nova pergunta
+</a>
 
             </div>
 
