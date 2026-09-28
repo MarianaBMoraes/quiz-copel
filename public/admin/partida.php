@@ -21,6 +21,7 @@ if (strlen($gameCode) !== 6) {
 $statement = $pdo->prepare(
     'SELECT
         partidas.id,
+        partidas.quiz_id,
         partidas.codigo,
         partidas.status,
         partidas.criado_em,
@@ -43,6 +44,60 @@ if (!$game) {
     http_response_code(404);
     exit('Partida não encontrada.');
 }
+
+$statement->execute([
+    'codigo' => $gameCode,
+]);
+
+$game = $statement->fetch();
+
+if (!$game) {
+    http_response_code(404);
+    exit('Partida não encontrada.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Quantidade de perguntas do quiz
+|--------------------------------------------------------------------------
+*/
+
+$statement = $pdo->prepare(
+    'SELECT COUNT(*)
+     FROM perguntas
+     WHERE quiz_id = :quiz_id'
+);
+
+$statement->execute([
+    'quiz_id' => $game['quiz_id'],
+]);
+
+$totalQuestions = (int) $statement->fetchColumn();
+
+/*
+|--------------------------------------------------------------------------
+| Participantes da partida
+|--------------------------------------------------------------------------
+*/
+
+$statement = $pdo->prepare(
+    'SELECT
+        id,
+        nome,
+        usuario_copel,
+        status,
+        entrou_em,
+        ultima_atividade_em
+     FROM participantes
+     WHERE partida_id = :partida_id
+     ORDER BY entrou_em ASC'
+);
+
+$statement->execute([
+    'partida_id' => $game['id'],
+]);
+
+$participants = $statement->fetchAll();
 
 $statement = $pdo->prepare(
     'SELECT
@@ -144,6 +199,30 @@ $formattedCode =
 
 <?php endif; ?>
 
+<?php if ($success === 'partida_iniciada'): ?>
+
+    <div class="admin-alert-success">
+        Quiz iniciado com sucesso.
+    </div>
+
+<?php endif; ?>
+
+<?php if ($error === 'sem_perguntas'): ?>
+
+    <div class="admin-alert-error">
+        Cadastre pelo menos uma pergunta antes de iniciar o quiz.
+    </div>
+
+<?php endif; ?>
+
+<?php if ($error === 'status'): ?>
+
+    <div class="admin-alert-error">
+        A partida não está mais disponível para ser iniciada.
+    </div>
+
+<?php endif; ?>
+
 <?php if ($error === 'partida_iniciada'): ?>
 
     <div class="admin-alert-error">
@@ -153,6 +232,18 @@ $formattedCode =
 <?php endif; ?>
 
         <section class="admin-summary">
+
+        <div class="summary-card">
+
+    <span>
+        Perguntas
+    </span>
+
+    <strong>
+        <?= $totalQuestions ?>
+    </strong>
+
+</div>
 
             <div class="summary-card">
 
@@ -218,13 +309,51 @@ $formattedCode =
                         Atualizar lista
                     </button>
 
-                    <button
-                        type="button"
-                        class="admin-button-primary"
-                        disabled
-                    >
-                        Iniciar quiz
-                    </button>
+                    <?php if ($game['status'] === 'aguardando'): ?>
+
+    <?php if ($totalQuestions > 0): ?>
+
+        <form
+            action="/admin/iniciar-partida.php"
+            method="post"
+            onsubmit="return confirm('Deseja iniciar o quiz agora? Depois disso, novos participantes não poderão entrar normalmente.');"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="<?= htmlspecialchars($csrfToken) ?>"
+            >
+
+            <input
+                type="hidden"
+                name="game_code"
+                value="<?= htmlspecialchars($gameCode) ?>"
+            >
+
+            <button
+                type="submit"
+                class="admin-button-primary"
+            >
+                Iniciar quiz
+            </button>
+
+        </form>
+
+    <?php else: ?>
+
+        <button
+            type="button"
+            class="admin-button-primary"
+            disabled
+            title="Cadastre pelo menos uma pergunta antes de iniciar."
+        >
+            Iniciar quiz
+        </button>
+
+    <?php endif; ?>
+
+<?php endif; ?>
 
                 </div>
 
@@ -356,7 +485,7 @@ $formattedCode =
         </section>
 
         <div class="admin-warning">
-            Ambiente de desenvolvimento. O login administrativo será implementado antes da publicação.
+            Ambiente de desenvolvimento. 
         </div>
 
     </main>
