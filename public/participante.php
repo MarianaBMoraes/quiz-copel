@@ -2,6 +2,9 @@
 
 $branding = require __DIR__ . '/../app/config/branding.php';
 
+$error = $_GET['erro'] ?? null;
+
+
 $pdo = require __DIR__ . '/../app/config/database.php';
 
 $rawCode = $_GET['code'] ?? '';
@@ -111,9 +114,17 @@ $formattedCode =
 
                 <form
                     class="participant-form"
-                    action="#"
+                    action="/entrar-partida.php"
                     method="post"
                 >
+
+                <?php if ($error === 'duplicado'): ?>
+
+    <div class="form-error">
+        Este usuário Copel já está participando desta partida.
+    </div>
+
+<?php endif; ?>
 
                     <input
                         type="hidden"

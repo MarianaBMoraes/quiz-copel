@@ -605,3 +605,26 @@ h2 {
         font-size: 30px;
     }
 }
+
+.waiting-info {
+    margin-top: 24px;
+    padding: 18px;
+
+    border-radius: 12px;
+
+    background: #fff3e8;
+
+    color: var(--primary-dark);
+
+    text-align: center;
+
+    font-size: 15px;
+}
+
+.waiting-info strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 32px;
+}
