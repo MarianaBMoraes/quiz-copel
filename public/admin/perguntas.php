@@ -85,6 +85,8 @@ $totalPerguntas = count($perguntas);
 $success = $_GET['sucesso'] ?? null;
 $error = $_GET['erro'] ?? null;
 
+$csrfToken = adminCsrfToken();
+
 ?>
 
 <!DOCTYPE html>
@@ -197,7 +199,13 @@ $error = $_GET['erro'] ?? null;
 <?php elseif ($error === 'possui_respostas'): ?>
 
     <div class="admin-alert-error">
-        Esta pergunta não pode ser alterada porque já possui respostas registradas.
+        Esta pergunta não pode ser excluída porque possui respostas registradas.
+    </div>
+
+<?php elseif ($error === 'excluir'): ?>
+
+    <div class="admin-alert-error">
+        Não foi possível excluir a pergunta.
     </div>
 
 <?php endif; ?>
@@ -305,9 +313,32 @@ $error = $_GET['erro'] ?? null;
     Editar
 </a>
 
-                                        <span class="action-unavailable">
-                                            Excluir
-                                        </span>
+                                        <form
+    action="/admin/excluir-pergunta.php"
+    method="post"
+    onsubmit="return confirm('Tem certeza que deseja excluir esta pergunta?');"
+>
+
+    <input
+        type="hidden"
+        name="csrf_token"
+        value="<?= htmlspecialchars($csrfToken) ?>"
+    >
+
+    <input
+        type="hidden"
+        name="pergunta_id"
+        value="<?= (int) $pergunta['id'] ?>"
+    >
+
+    <button
+        type="submit"
+        class="admin-delete-button"
+    >
+        Excluir
+    </button>
+
+</form>
 
                                     </div>
 
