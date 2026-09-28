@@ -1126,3 +1126,52 @@ h2 {
 .admin-delete-button:hover {
     text-decoration: underline;
 }
+
+.admin-button-link {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+}
+
+.admin-quiz-form {
+    display: grid;
+
+    gap: 18px;
+
+    padding: 24px;
+
+    border-top: 1px solid #eeeeee;
+}
+
+.admin-form-field textarea {
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #dddddd;
+
+    border-radius: 9px;
+
+    background: white;
+
+    outline: none;
+
+    resize: vertical;
+
+    font: inherit;
+}
+
+.admin-form-field textarea:focus {
+    border-color: var(--primary);
+}
+
+.admin-form-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+}

@@ -6,6 +6,7 @@ requireAdmin();
 
 $pdo = require __DIR__ . '/../../app/config/database.php';
 $branding = require __DIR__ . '/../../app/config/branding.php';
+$success = $_GET['sucesso'] ?? null;
 
 $statement = $pdo->query(
     'SELECT
@@ -107,6 +108,14 @@ $quizzes = $statement->fetchAll();
 
     </header>
 
+    <?php if ($success === 'criado'): ?>
+
+    <div class="admin-alert-success">
+        Quiz criado com sucesso.
+    </div>
+
+<?php endif; ?>
+
     <section class="admin-panel">
 
         <div class="admin-panel-header">
@@ -127,14 +136,12 @@ $quizzes = $statement->fetchAll();
 
             <div class="admin-actions">
 
-                <button
-                    type="button"
-                    class="admin-button-primary"
-                    disabled
-                    title="Será liberado na próxima etapa."
-                >
-                    Novo quiz
-                </button>
+                <a
+    href="/admin/novo-quiz.php"
+    class="admin-button-primary admin-button-link"
+>
+    Novo quiz
+</a>
 
             </div>
 
