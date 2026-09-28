@@ -265,9 +265,29 @@ $quizzes = $statement->fetchAll();
     Perguntas
 </a>
 
-    <span class="action-unavailable">
-        Iniciar jogo
-    </span>
+    <form
+    action="/admin/criar-partida.php"
+    method="post"
+>
+    <input
+        type="hidden"
+        name="csrf_token"
+        value="<?= htmlspecialchars($csrfToken) ?>"
+    >
+
+    <input
+        type="hidden"
+        name="quiz_id"
+        value="<?= (int) $quiz['id'] ?>"
+    >
+
+    <button
+        type="submit"
+        class="admin-button-primary"
+    >
+        Criar partida
+    </button>
+</form>
 
     <form
         action="/admin/excluir-quiz.php"

@@ -1382,3 +1382,13 @@ h2 {
     transform: translateY(0);
 
 }
+
+.admin-button-danger {
+    color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.admin-button-danger:hover {
+    background: #e74c3c;
+    color: white;
+}

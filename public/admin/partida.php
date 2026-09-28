@@ -169,6 +169,13 @@ $formattedCode =
 
             <div>
 
+            <a
+    href="/admin/quizzes.php"
+    class="admin-back-link"
+>
+    ← Voltar para quizzes
+</a>
+                
                 <span class="admin-eyebrow">
                     PAINEL ADMINISTRATIVO
                 </span>
@@ -308,6 +315,33 @@ $formattedCode =
                     >
                         Atualizar lista
                     </button>
+
+                    <form
+    action="/admin/excluir-partida.php"
+    method="post"
+    onsubmit="return confirm('Tem certeza que deseja excluir esta partida? Esta ação removerá participantes e respostas.');"
+>
+
+    <input
+        type="hidden"
+        name="csrf_token"
+        value="<?= htmlspecialchars($csrfToken) ?>"
+    >
+
+    <input
+        type="hidden"
+        name="game_code"
+        value="<?= htmlspecialchars($gameCode) ?>"
+    >
+
+    <button
+        type="submit"
+        class="admin-button-secondary admin-button-danger"
+    >
+        Excluir partida
+    </button>
+
+</form>
 
                     <?php if ($game['status'] === 'aguardando'): ?>
 
