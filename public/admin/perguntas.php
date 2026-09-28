@@ -306,6 +306,44 @@ $csrfToken = adminCsrfToken();
 
                                     <div class="admin-row-actions">
 
+                                    <form
+            action="/admin/mover-pergunta.php"
+            method="post"
+            class="question-order-actions"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="<?= htmlspecialchars($csrfToken) ?>"
+            >
+
+            <input
+                type="hidden"
+                name="pergunta_id"
+                value="<?= (int) $pergunta['id'] ?>"
+            >
+
+            <button
+                type="submit"
+                name="direcao"
+                value="cima"
+                class="question-order-button"
+            >
+                ↑
+            </button>
+
+            <button
+                type="submit"
+                name="direcao"
+                value="baixo"
+                class="question-order-button"
+            >
+                ↓
+            </button>
+
+        </form>
+
                                         <a
     href="/admin/editar-pergunta.php?id=<?= (int) $pergunta['id'] ?>"
     class="admin-nav-link"
