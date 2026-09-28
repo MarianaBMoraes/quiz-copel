@@ -53,7 +53,7 @@ $error = $_GET['erro'] ?? null;
                 >
 
                 <a
-                    href="#"
+                    href="/admin/"
                     class="admin-link"
                 >
                     Área administrativa

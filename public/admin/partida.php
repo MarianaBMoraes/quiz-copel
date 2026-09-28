@@ -1,10 +1,10 @@
 <?php
 
-session_start();
+require_once __DIR__ . '/../../app/auth.php';
 
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+requireAdmin();
+
+$csrfToken = adminCsrfToken();
 
 $branding = require __DIR__ . '/../../app/config/branding.php';
 $pdo = require __DIR__ . '/../../app/config/database.php';
@@ -292,7 +292,7 @@ $formattedCode =
             <input
                 type="hidden"
                 name="csrf_token"
-                value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>"
+                value="<?= htmlspecialchars($csrfToken) ?>"
             >
 
             <input

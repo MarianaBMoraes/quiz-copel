@@ -1,6 +1,8 @@
 <?php
 
-session_start();
+require_once __DIR__ . '/../../app/auth.php';
+
+requireAdmin();
 
 $pdo = require __DIR__ . '/../../app/config/database.php';
 
@@ -9,12 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$csrfToken = $_POST['csrf_token'] ?? '';
-
-if (
-    empty($_SESSION['csrf_token']) ||
-    !hash_equals($_SESSION['csrf_token'], $csrfToken)
-) {
+if (!validateAdminCsrf($_POST['csrf_token'] ?? null)) {
     http_response_code(403);
     exit('Solicitação inválida.');
 }
