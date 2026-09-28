@@ -84,6 +84,13 @@ $games = $statement->fetchAll();
 
             <div class="admin-top-actions">
 
+      <a
+        href="/admin/quizzes.php"
+        class="admin-nav-link"
+    >
+        Meus Quizzes
+    </a>
+
     <?php if (isSuperAdmin()): ?>
 
         <a
