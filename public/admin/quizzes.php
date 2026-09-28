@@ -258,9 +258,12 @@ $quizzes = $statement->fetchAll();
         Editar
     </a>
 
-    <span class="action-unavailable">
-        Perguntas
-    </span>
+    <a
+    href="/admin/perguntas.php?quiz_id=<?= (int) $quiz['id'] ?>"
+    class="admin-nav-link"
+>
+    Perguntas
+</a>
 
     <span class="action-unavailable">
         Iniciar jogo
