@@ -114,6 +114,12 @@ $quizzes = $statement->fetchAll();
         Quiz criado com sucesso.
     </div>
 
+<?php elseif ($success === 'atualizado'): ?>
+
+    <div class="admin-alert-success">
+        Quiz atualizado com sucesso.
+    </div>
+
 <?php endif; ?>
 
     <section class="admin-panel">
@@ -214,9 +220,12 @@ $quizzes = $statement->fetchAll();
 
                                     <div class="admin-row-actions">
 
-                                        <span class="action-unavailable">
-                                            Editar
-                                        </span>
+                                        <a
+    href="/admin/editar-quiz.php?id=<?= (int) $quiz['id'] ?>"
+    class="admin-nav-link"
+>
+    Editar
+</a>
 
                                         <span class="action-unavailable">
                                             Perguntas
