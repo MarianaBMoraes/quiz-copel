@@ -188,13 +188,19 @@ $error = $_GET['erro'] ?? null;
     <?php endif; ?>
 
 
-    <?php if ($error === 'nao_encontrada'): ?>
+   <?php if ($error === 'nao_encontrada'): ?>
 
-        <div class="admin-alert-error">
-            Pergunta não encontrada.
-        </div>
+    <div class="admin-alert-error">
+        Pergunta não encontrada.
+    </div>
 
-    <?php endif; ?>
+<?php elseif ($error === 'possui_respostas'): ?>
+
+    <div class="admin-alert-error">
+        Esta pergunta não pode ser alterada porque já possui respostas registradas.
+    </div>
+
+<?php endif; ?>
 
 
     <section class="admin-panel">
@@ -292,9 +298,12 @@ $error = $_GET['erro'] ?? null;
 
                                     <div class="admin-row-actions">
 
-                                        <span class="action-unavailable">
-                                            Editar
-                                        </span>
+                                        <a
+    href="/admin/editar-pergunta.php?id=<?= (int) $pergunta['id'] ?>"
+    class="admin-nav-link"
+>
+    Editar
+</a>
 
                                         <span class="action-unavailable">
                                             Excluir
