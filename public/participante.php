@@ -2,12 +2,39 @@
 
 $branding = require __DIR__ . '/../app/config/branding.php';
 
+$pdo = require __DIR__ . '/../app/config/database.php';
+
 $rawCode = $_GET['code'] ?? '';
 
 $gameCode = preg_replace('/\D/', '', $rawCode);
 
 if (strlen($gameCode) !== 6) {
     header('Location: /');
+    exit;
+}
+
+$statement = $pdo->prepare(
+    'SELECT
+        partidas.id,
+        partidas.codigo,
+        partidas.status,
+        quizzes.titulo,
+        quizzes.subtitulo
+     FROM partidas
+     INNER JOIN quizzes
+        ON quizzes.id = partidas.quiz_id
+     WHERE partidas.codigo = :codigo
+     LIMIT 1'
+);
+
+$statement->execute([
+    'codigo' => $gameCode,
+]);
+
+$game = $statement->fetch();
+
+if (!$game || $game['status'] !== 'aguardando') {
+    header('Location: /?erro=partida');
     exit;
 }
 

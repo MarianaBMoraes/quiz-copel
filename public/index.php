@@ -2,6 +2,8 @@
 
 $branding = require __DIR__ . '/../app/config/branding.php';
 
+$error = $_GET['erro'] ?? null;
+
 ?>
 
 <!DOCTYPE html>
@@ -82,24 +84,32 @@ $branding = require __DIR__ . '/../app/config/branding.php';
                 </div>
 
                 <div class="join-card">
+                    
+                 <span class="join-label">
+        PARTICIPAR
+    </span>
 
-                    <span class="join-label">
-                        PARTICIPAR
-                    </span>
+    <h3>
+        Entre na partida
+    </h3>
 
-                    <h3>
-                        Entre na partida
-                    </h3>
+    <p>
+        Digite o código exibido na tela da apresentação.
+    </p>
 
-                    <p>
-                        Digite o código exibido na tela da apresentação.
-                    </p>
+    <?php if ($error === 'partida'): ?>
 
-                    <form action="/participante.php" method="get">
+        <div class="form-error">
+            Código inválido ou partida indisponível.
+        </div>
 
-                        <label for="game-code">
-                            Código da partida
-                        </label>
+    <?php endif; ?>
+
+    <form action="/participante.php" method="get">
+
+        <label for="game-code">
+            Código da partida
+        </label>
 
                         <input
                             type="text"
