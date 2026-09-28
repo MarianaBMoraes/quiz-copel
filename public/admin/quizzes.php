@@ -6,7 +6,11 @@ requireAdmin();
 
 $pdo = require __DIR__ . '/../../app/config/database.php';
 $branding = require __DIR__ . '/../../app/config/branding.php';
+
 $success = $_GET['sucesso'] ?? null;
+$error = $_GET['erro'] ?? null;
+
+$csrfToken = adminCsrfToken();
 
 $statement = $pdo->query(
     'SELECT
@@ -108,7 +112,7 @@ $quizzes = $statement->fetchAll();
 
     </header>
 
-    <?php if ($success === 'criado'): ?>
+<?php if ($success === 'criado'): ?>
 
     <div class="admin-alert-success">
         Quiz criado com sucesso.
@@ -118,6 +122,33 @@ $quizzes = $statement->fetchAll();
 
     <div class="admin-alert-success">
         Quiz atualizado com sucesso.
+    </div>
+
+<?php elseif ($success === 'excluido'): ?>
+
+    <div class="admin-alert-success">
+        Quiz excluído com sucesso.
+    </div>
+
+<?php endif; ?>
+
+
+<?php if ($error === 'possui_partidas'): ?>
+
+    <div class="admin-alert-error">
+        Este quiz não pode ser excluído porque já possui partidas vinculadas.
+    </div>
+
+<?php elseif ($error === 'nao_encontrado'): ?>
+
+    <div class="admin-alert-error">
+        Quiz não encontrado.
+    </div>
+
+<?php elseif ($error === 'id'): ?>
+
+    <div class="admin-alert-error">
+        Quiz inválido.
     </div>
 
 <?php endif; ?>
@@ -220,22 +251,53 @@ $quizzes = $statement->fetchAll();
 
                                     <div class="admin-row-actions">
 
-                                        <a
-    href="/admin/editar-quiz.php?id=<?= (int) $quiz['id'] ?>"
-    class="admin-nav-link"
->
-    Editar
-</a>
+                                         <a
+        href="/admin/editar-quiz.php?id=<?= (int) $quiz['id'] ?>"
+        class="admin-nav-link"
+    >
+        Editar
+    </a>
 
-                                        <span class="action-unavailable">
-                                            Perguntas
-                                        </span>
+    <span class="action-unavailable">
+        Perguntas
+    </span>
 
-                                        <span class="action-unavailable">
-                                            Iniciar jogo
-                                        </span>
+    <span class="action-unavailable">
+        Iniciar jogo
+    </span>
 
-                                    </div>
+    <form
+        action="/admin/excluir-quiz.php"
+        method="post"
+        onsubmit="return confirm(
+            'Tem certeza que deseja excluir o quiz <?= htmlspecialchars(
+                addslashes($quiz['titulo'])
+            ) ?>? Esta ação não poderá ser desfeita.'
+        );"
+    >
+
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="<?= htmlspecialchars($csrfToken) ?>"
+        >
+
+        <input
+            type="hidden"
+            name="quiz_id"
+            value="<?= (int) $quiz['id'] ?>"
+        >
+
+        <button
+            type="submit"
+            class="admin-delete-button"
+        >
+            Excluir
+        </button>
+
+    </form>
+
+</div>
 
                                 </td>
 
