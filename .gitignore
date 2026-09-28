@@ -1,0 +1,25 @@
+# Arquivos com credenciais e configurações privadas
+.env
+.env.*
+!.env.example
+
+# Dependências
+/vendor/
+/node_modules/
+
+# Arquivos temporários e logs
+/tmp/
+/logs/
+*.log
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Configurações locais do editor
+.vscode/
+.idea/
+
+# Backups locais
+*.bak
+*.backup
