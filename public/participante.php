@@ -1,6 +1,7 @@
 <?php
 
 $branding = require __DIR__ . '/../app/config/branding.php';
+require_once __DIR__ . '/../app/jogo.php';
 
 $error = $_GET['erro'] ?? null;
 
@@ -36,8 +37,14 @@ $statement->execute([
 
 $game = $statement->fetch();
 
-if (!$game || $game['status'] !== 'aguardando') {
+if (!$game || $game['status'] === 'finalizado') {
     header('Location: /?erro=partida');
+    exit;
+}
+
+// Já entrou por este celular: volta direto pro jogo.
+if (jogoParticipantePorCookie($pdo, (int) $game['id'])) {
+    header('Location: /jogar.php?code=' . urlencode($gameCode));
     exit;
 }
 
@@ -121,7 +128,7 @@ $formattedCode =
                 <?php if ($error === 'duplicado'): ?>
 
     <div class="form-error">
-        Este usuário Copel já está participando desta partida.
+        Este usuário Copel já está participando desta partida. Se você entrou por outro aparelho, digite o nome exatamente como da primeira vez.
     </div>
 
 <?php endif; ?>

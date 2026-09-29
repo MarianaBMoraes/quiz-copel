@@ -148,6 +148,11 @@ $formattedCode =
         href="/assets/css/style.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="/assets/css/jogo.css"
+    >
+
     <style>
         :root {
             --primary: <?= htmlspecialchars($branding['colors']['primary']) ?>;
@@ -238,53 +243,125 @@ $formattedCode =
 
 <?php endif; ?>
 
-        <section class="admin-summary">
+        <section
+            class="admin-panel ao-vivo"
+            data-ao-vivo
+            data-code="<?= htmlspecialchars($gameCode) ?>"
+            data-csrf="<?= htmlspecialchars($csrfToken) ?>"
+            data-total-perguntas="<?= $totalQuestions ?>"
+        >
 
-        <div class="summary-card">
+            <div class="admin-panel-header">
 
-    <span>
-        Perguntas
-    </span>
+                <div>
+                    <h2>
+                        Controle ao vivo
+                    </h2>
 
-    <strong>
-        <?= $totalQuestions ?>
-    </strong>
+                    <p class="ao-vivo-fase">
+                        Partida <strong><?= htmlspecialchars($formattedCode) ?></strong>
+                        · <span data-campo="fase">carregando...</span>
+                    </p>
+                </div>
 
-</div>
+                <div class="admin-actions">
 
-            <div class="summary-card">
+                    <button type="button" class="admin-button-secondary" data-copiar-link>
+                        Copiar link de entrada
+                    </button>
 
-                <span>
-                    Código
-                </span>
+                    <a
+                        class="ao-vivo-link"
+                        href="/apresentacao.php?code=<?= urlencode($gameCode) ?>"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Abrir tela de apresentação ↗
+                    </a>
 
-                <strong>
-                    <?= htmlspecialchars($formattedCode) ?>
-                </strong>
+                </div>
 
             </div>
 
-            <div class="summary-card">
+            <div class="admin-summary">
 
-                <span>
-                    Participantes
-                </span>
+                <div class="summary-card">
+                    <span>Pergunta</span>
+                    <strong data-campo="pergunta">-</strong>
+                </div>
 
-                <strong>
-                    <?= $totalParticipants ?>
-                </strong>
+                <div class="summary-card">
+                    <span>Participantes</span>
+                    <strong data-campo="participantes"><?= $totalParticipants ?></strong>
+                </div>
+
+                <div class="summary-card">
+                    <span>Responderam</span>
+                    <strong data-campo="respondidos">-</strong>
+                </div>
+
+                <div class="summary-card">
+                    <span>Tempo</span>
+                    <strong data-campo="tempo">-</strong>
+                </div>
 
             </div>
 
-            <div class="summary-card">
+            <div class="ao-vivo-controles">
 
-                <span>
-                    Status
-                </span>
+                <button type="button" class="admin-button-primary" data-acao="iniciar" hidden>
+                    Iniciar quiz
+                </button>
 
-                <strong class="status-text">
-                    <?= htmlspecialchars($game['status']) ?>
-                </strong>
+                <button type="button" class="admin-button-primary" data-acao="mostrar_ranking" hidden>
+                    Mostrar ranking
+                </button>
+
+                <button type="button" class="admin-button-primary" data-acao="proxima" hidden>
+                    Próxima pergunta
+                </button>
+
+                <button type="button" class="admin-button-secondary" data-acao="encerrar_questao" hidden>
+                    Encerrar questão
+                </button>
+
+                <span class="espaco"></span>
+
+                <button type="button" class="admin-button-secondary admin-button-danger" data-acao="finalizar" hidden>
+                    Encerrar jogo
+                </button>
+
+            </div>
+
+            <div class="admin-alert-error ao-vivo-erro" data-campo="erro" hidden></div>
+
+            <div class="ao-vivo-ranking" data-campo="ranking-bloco" hidden>
+
+                <h3>
+                    Classificação completa
+                </h3>
+
+                <div class="ao-vivo-exportar">
+                    <a class="ao-vivo-link" href="/admin/exportar.php?code=<?= urlencode($gameCode) ?>&amp;tipo=geral">Baixar relatório geral</a>
+                    <a class="ao-vivo-link" href="/admin/exportar.php?code=<?= urlencode($gameCode) ?>&amp;tipo=perguntas">Baixar análise por pergunta</a>
+                    <a class="ao-vivo-link" href="/admin/exportar.php?code=<?= urlencode($gameCode) ?>&amp;tipo=respostas">Baixar respostas de cada participante</a>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="participants-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nome</th>
+                                <th>Usuário Copel</th>
+                                <th>Acertos</th>
+                                <th>Respondidas</th>
+                                <th>Pontos</th>
+                            </tr>
+                        </thead>
+                        <tbody data-campo="ranking"></tbody>
+                    </table>
+                </div>
 
             </div>
 
@@ -343,81 +420,6 @@ $formattedCode =
 
 </form>
 
-                    <?php if ($game['status'] === 'aguardando'): ?>
-
-    <?php if ($totalQuestions > 0): ?>
-
-        <form
-            action="/admin/iniciar-partida.php"
-            method="post"
-            onsubmit="return confirm('Deseja iniciar o quiz agora? Depois disso, novos participantes não poderão entrar normalmente.');"
-        >
-
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="<?= htmlspecialchars($csrfToken) ?>"
-            >
-
-            <input
-                type="hidden"
-                name="game_code"
-                value="<?= htmlspecialchars($gameCode) ?>"
-            >
-
-            <button
-                type="submit"
-                class="admin-button-primary"
-            >
-                Iniciar quiz
-            </button>
-
-        </form>
-
-    <?php else: ?>
-
-        <button
-            type="button"
-            class="admin-button-primary"
-            disabled
-            title="Cadastre pelo menos uma pergunta antes de iniciar."
-        >
-            Iniciar quiz
-        </button>
-
-    <?php endif; ?>
-
-<?php endif; ?>
-
-  <?php if ($game['status'] === 'leitura'): ?>
-
-<form
-    action="/admin/iniciar-respostas.php"
-    method="post"
->
-
-    <input
-        type="hidden"
-        name="csrf_token"
-        value="<?= htmlspecialchars($csrfToken) ?>"
-    >
-
-    <input
-        type="hidden"
-        name="game_code"
-        value="<?= htmlspecialchars($gameCode) ?>"
-    >
-
-    <button
-        type="submit"
-        class="admin-button-primary"
-    >
-        Iniciar respostas
-    </button>
-
-</form>
-
-<?php endif; ?>
 
                 </div>
 
@@ -553,6 +555,8 @@ $formattedCode =
         </div>
 
     </main>
+
+    <script src="/assets/js/admin-partida.js"></script>
 
 </body>
 

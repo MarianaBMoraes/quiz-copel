@@ -1,5 +1,10 @@
 <?php
 
+// Só roda pelo terminal, nunca pelo navegador.
+if (PHP_SAPI !== 'cli') {
+    exit;
+}
+
 $pdo = require __DIR__ . '/../app/config/database.php';
 
 $result = $pdo

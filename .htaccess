@@ -1,0 +1,9 @@
+# Hospedagem compartilhada (cPanel, Hostinger): a pasta do domínio recebe o
+# projeto inteiro. Tudo é servido de public/, então app/, scripts/ e o .env
+# (com a senha do banco) nunca ficam acessíveis pelo navegador.
+
+Options -Indexes
+
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]

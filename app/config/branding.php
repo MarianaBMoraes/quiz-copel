@@ -5,6 +5,9 @@ return [
     'quiz_name' => 'Transgressões',
     'quiz_subtitle' => 'Causas, impactos e aprendizados',
 
+    'logo' => '/assets/images/branding/logo-copel-recortado.png',
+    'logo_alt' => 'Copel',
+
     'colors' => [
         'primary' => '#F58220',
         'primary_dark' => '#D8660C',

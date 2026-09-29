@@ -1,388 +1,147 @@
 <?php
 
+/*
+| Tela compartilhada no Teams. Não tem nenhum controle: quem conduz
+| é o painel da partida. Exige login de administrador porque mostra
+| a pergunta antes de todo mundo.
+*/
+
+require_once __DIR__ . '/../app/auth.php';
+require_once __DIR__ . '/../app/jogo.php';
+
+requireAdmin();
+
 $branding = require __DIR__ . '/../app/config/branding.php';
 $pdo = require __DIR__ . '/../app/config/database.php';
 
-
-$gameCode = preg_replace(
-    '/\D/',
-    '',
-    $_GET['code'] ?? ''
-);
-
-
-if (strlen($gameCode) !== 6) {
-    header('Location: /');
-    exit;
-}
-
-
-$statement = $pdo->prepare(
-    'SELECT
-        partidas.id,
-        partidas.codigo,
-        partidas.status,
-        quizzes.titulo,
-        quizzes.subtitulo
-     FROM partidas
-     INNER JOIN quizzes
-        ON quizzes.id = partidas.quiz_id
-     WHERE partidas.codigo = :codigo
-     LIMIT 1'
-);
-
-
-$statement->execute([
-    'codigo' => $gameCode,
-]);
-
-
-$game = $statement->fetch();
-
+$gameCode = jogoCodigoValido($_GET['code'] ?? null);
+$game = $gameCode ? jogoCarregarPartida($pdo, $gameCode) : null;
 
 if (!$game) {
+    http_response_code(404);
     exit('Partida não encontrada.');
 }
 
-
-$statement = $pdo->prepare(
-    'SELECT COUNT(*)
-     FROM participantes
-     WHERE partida_id = :partida_id'
-);
-
-
-$statement->execute([
-    'partida_id' => $game['id'],
-]);
-
-
-$totalParticipants = (int) $statement->fetchColumn();
-
-
-$formattedCode =
-    substr($gameCode, 0, 3)
-    . ' '
-    . substr($gameCode, 3, 3);
+$formattedCode = substr($gameCode, 0, 3) . ' ' . substr($gameCode, 3, 3);
 
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
+    <title><?= htmlspecialchars($game['titulo']) ?> | Apresentação</title>
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+    <link rel="stylesheet" href="/assets/css/jogo.css">
 
-<title>
-    Apresentação
-</title>
-
-
-<link
-    rel="stylesheet"
-    href="/assets/css/style.css"
->
-
-
-<style>
-
-:root {
-    --primary: <?= htmlspecialchars($branding['colors']['primary']) ?>;
-    --primary-dark: <?= htmlspecialchars($branding['colors']['primary_dark']) ?>;
-    --background: <?= htmlspecialchars($branding['colors']['background']) ?>;
-    --surface: <?= htmlspecialchars($branding['colors']['surface']) ?>;
-    --text: <?= htmlspecialchars($branding['colors']['text']) ?>;
-    --muted: <?= htmlspecialchars($branding['colors']['muted']) ?>;
-}
-
-
-.presentation-page {
-
-    min-height:100vh;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    background:#f5f6f8;
-
-    padding:40px;
-
-}
-
-
-.presentation-card {
-
-    width:min(1200px,100%);
-
-    background:white;
-
-    border-radius:30px;
-
-    padding:50px;
-
-    text-align:center;
-
-}
-
-
-.presentation-title {
-
-    font-size:64px;
-
-    margin-bottom:20px;
-
-}
-
-
-.presentation-code {
-
-    display:inline-block;
-
-    background:#fff3e8;
-
-    color:var(--primary-dark);
-
-    padding:15px 30px;
-
-    border-radius:15px;
-
-    font-size:42px;
-
-    font-weight:800;
-
-    letter-spacing:5px;
-
-}
-
-
-.presentation-info {
-
-    margin-top:40px;
-
-    font-size:28px;
-
-    color:var(--muted);
-
-}
-
-
-.presentation-status {
-
-    margin-top:40px;
-
-    font-size:36px;
-
-    font-weight:700;
-
-    color:var(--primary);
-
-}
-
-.question-box {
-
-    margin-top: 50px;
-
-}
-
-
-.question-text {
-
-    font-size: 42px;
-
-    font-weight: 700;
-
-    margin-bottom: 35px;
-
-}
-
-
-.question-options {
-
-    display:grid;
-
-    grid-template-columns:1fr 1fr;
-
-    gap:20px;
-
-}
-
-
-.question-option {
-
-    padding:25px;
-
-    border-radius:16px;
-
-    background:#f5f6f8;
-
-    font-size:30px;
-
-    font-weight:700;
-
-}
-
-
-</style>
-
-
+    <?php require __DIR__ . '/../app/views/cores-marca.php'; ?>
 </head>
 
+<body class="apresentacao">
 
-<body>
+    <main
+        class="palco"
+        data-apresentacao
+        data-code="<?= htmlspecialchars($gameCode) ?>"
+    >
 
+        <div class="palco-aviso" data-campo="aviso" hidden></div>
 
-<main class="presentation-page">
-
-
-<section class="presentation-card">
-
-
-<h1 class="presentation-title">
-
-<?= htmlspecialchars($game['titulo']) ?>
-
-</h1>
-
-
-<div class="presentation-code">
-
-<?= htmlspecialchars($formattedCode) ?>
-
-</div>
-
-
-<div class="presentation-info">
-
-Participantes:
-
-<strong>
-<?= $totalParticipants ?>
-</strong>
-
-</div>
-
-
-<div class="presentation-status">
-
-<?= htmlspecialchars($game['status']) ?>
-
-</div>
-
-<div id="question-area">
-
-</div>
-
-
-</section>
-
-
-</main>
-
-<script>
-
-const gameCode = "<?= htmlspecialchars($gameCode) ?>";
-
-
-async function updatePresentation() {
-
-
-    try {
-
-
-        const response = await fetch(
-            `/api/pergunta-atual.php?code=${gameCode}`
-        );
-
-
-        const data = await response.json();
-
-
-        const area = document.getElementById(
-            'question-area'
-        );
-
-
-        if (!area) {
-            return;
-        }
-
-
-        if (!data.pergunta) {
-
-            area.innerHTML = '';
-
-            return;
-
-        }
-
-
-        const question = data.pergunta;
-
-
-        area.innerHTML = `
-
-            <div class="question-box">
-
-                <div class="question-text">
-
-                    ${question.enunciado}
-
-                </div>
-
-
-                <div class="question-options">
-
-                    <div class="question-option">
-                        A) ${question.alternativas.A}
-                    </div>
-
-                    <div class="question-option">
-                        B) ${question.alternativas.B}
-                    </div>
-
-                    <div class="question-option">
-                        C) ${question.alternativas.C}
-                    </div>
-
-                    <div class="question-option">
-                        D) ${question.alternativas.D}
-                    </div>
-
-                </div>
-
+        <header class="palco-topo">
+            <div class="palco-marca">
+                <img
+                    src="<?= htmlspecialchars($branding['logo']) ?>"
+                    alt="<?= htmlspecialchars($branding['logo_alt']) ?>"
+                >
+                <span class="palco-rotulo"><?= htmlspecialchars($branding['brand_name']) ?></span>
             </div>
 
-        `;
+            <div class="palco-codigo" data-campo="codigo-topo" hidden>
+                Código <strong><?= htmlspecialchars($formattedCode) ?></strong>
+            </div>
+        </header>
 
+        <section class="palco-corpo">
 
-    } catch(error) {
+            <div class="cena cena-espera" data-cena="aguardando" hidden>
+                <div>
+                    <h1 class="espera-titulo"><?= htmlspecialchars($game['titulo']) ?></h1>
 
-        console.error(error);
+                    <?php if (!empty($game['subtitulo'])): ?>
+                        <p class="espera-subtitulo"><?= htmlspecialchars($game['subtitulo']) ?></p>
+                    <?php endif; ?>
 
-    }
+                    <ol class="espera-passos">
+                        <li><strong>Aponte a câmera do celular</strong> para o QR Code</li>
+                        <li data-campo="passo-endereco">ou acesse <span class="espera-endereco" data-campo="endereco"></span> e digite o código</li>
+                    </ol>
+                </div>
 
-}
+                <div class="espera-qr">
+                    <div class="espera-qr-codigo" data-campo="qr"></div>
 
+                    <div class="espera-codigo">
+                        <span>Código da partida</span>
+                        <strong><?= htmlspecialchars($formattedCode) ?></strong>
+                    </div>
+                </div>
+            </div>
 
-updatePresentation();
+            <div class="cena cena-pergunta" data-cena="pergunta" hidden>
+                <div class="pergunta-cabeca">
+                    <span class="pergunta-numero" data-campo="numero"></span>
+                    <span class="pergunta-respondidos" data-campo="respondidos-bloco">
+                        <strong data-campo="respondidos">0</strong> de <span data-campo="participantes">0</span> responderam
+                    </span>
+                </div>
 
+                <h1 class="pergunta-enunciado" data-campo="enunciado"></h1>
 
-setInterval(
-    updatePresentation,
-    3000
-);
+                <p class="pergunta-aviso" data-campo="aviso-leitura"></p>
 
+                <ol class="alternativas" data-campo="alternativas"></ol>
 
-</script>
+                <div class="aprendizado" data-campo="aprendizado" hidden>
+                    <span>Aprendizado</span>
+                    <p data-campo="explicacao"></p>
+                </div>
+            </div>
+
+            <div class="cena cena-ranking" data-cena="ranking" hidden>
+                <h1 class="ranking-titulo" data-campo="ranking-titulo"></h1>
+                <ol class="ranking-lista" data-campo="ranking-lista"></ol>
+            </div>
+
+        </section>
+
+        <footer class="palco-rodape">
+            <div data-campo="rodape-esquerda">
+                <div class="rodape-contador" data-campo="contador" hidden>
+                    <strong data-campo="contador-numero">0</strong>
+                    <span data-campo="contador-texto">participantes na sala</span>
+                </div>
+
+                <div class="linha-energia" data-campo="linha" data-modo="parado" hidden>
+                    <div class="linha-energia-carga"></div>
+                    <div class="linha-energia-postes">
+                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="palco-relogio" data-campo="relogio"></div>
+        </footer>
+
+    </main>
+
+    <script src="/assets/js/vendor/qrcode.js"></script>
+    <script src="/assets/js/apresentacao.js"></script>
 
 </body>
 

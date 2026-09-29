@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../app/auth.php';
+require_once __DIR__ . '/../../app/jogo.php';
 
 requireAdmin();
 
@@ -87,6 +88,9 @@ $statement->execute([
     'codigo' => $code,
     'status' => 'aguardando',
 ]);
+
+
+jogoPublicarEstado($pdo, $code);
 
 
 header(

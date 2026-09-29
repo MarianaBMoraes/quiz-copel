@@ -1,338 +1,154 @@
 <?php
 
+/*
+| Tela do participante no celular. A página carrega uma vez e o
+| assets/js/jogar.js acompanha a partida pelo arquivo de estado.
+*/
+
+require_once __DIR__ . '/../app/jogo.php';
+
 $branding = require __DIR__ . '/../app/config/branding.php';
 $pdo = require __DIR__ . '/../app/config/database.php';
 
+$gameCode = jogoCodigoValido($_GET['code'] ?? null);
 
-$gameCode = preg_replace(
-    '/\D/',
-    '',
-    $_GET['code'] ?? ''
-);
-
-$answered = ($_GET['respondido'] ?? null) === '1';
-
-
-if (strlen($gameCode) !== 6) {
+if (!$gameCode) {
     header('Location: /');
     exit;
 }
 
-
-// Busca participante pelo cookie
-
-$token = $_COOKIE['quiz_participant'] ?? null;
-
-
-if (!$token) {
-    exit('Participante não identificado.');
-}
-
-
-$tokenHash = hash('sha256', $token);
-
-
-$statement = $pdo->prepare(
-    'SELECT
-        participantes.id,
-        participantes.partida_id
-     FROM participantes
-     WHERE token_reconexao_hash = :token
-     LIMIT 1'
-);
-
-
-$statement->execute([
-    'token' => $tokenHash,
-]);
-
-
-$participant = $statement->fetch();
-
-
-if (!$participant) {
-    exit('Participante não encontrado.');
-}
-
-
-// Busca partida
-
-$statement = $pdo->prepare(
-    'SELECT
-        partidas.status,
-        partidas.pergunta_atual_id,
-        quizzes.titulo
-     FROM partidas
-     INNER JOIN quizzes
-        ON quizzes.id = partidas.quiz_id
-     WHERE partidas.codigo = :codigo
-     LIMIT 1'
-);
-
-
-$statement->execute([
-    'codigo' => $gameCode,
-]);
-
-
-$game = $statement->fetch();
-
+$game = jogoCarregarPartida($pdo, $gameCode);
 
 if (!$game) {
-    exit('Partida não encontrada.');
+    header('Location: /?erro=partida');
+    exit;
 }
 
+$participant = jogoParticipantePorCookie($pdo, (int) $game['id']);
 
-if (!$game['pergunta_atual_id']) {
-    exit('Aguardando pergunta.');
+if (!$participant) {
+    header('Location: /participante.php?code=' . urlencode($gameCode));
+    exit;
 }
 
+// Garante que o arquivo de estado exista antes do primeiro fetch.
+jogoPublicarEstado($pdo, $gameCode);
 
-// Busca pergunta
-
-$statement = $pdo->prepare(
-    'SELECT
-        id,
-        enunciado
-     FROM perguntas
-     WHERE id = :id
-     LIMIT 1'
-);
-
-
-$statement->execute([
-    'id' => $game['pergunta_atual_id'],
-]);
-
-
-$question = $statement->fetch();
-
-
-if (!$question) {
-    exit('Pergunta não encontrada.');
-}
-
-
-// Busca alternativas
-
-$statement = $pdo->prepare(
-    'SELECT
-        letra
-     FROM alternativas
-     WHERE pergunta_id = :pergunta_id
-     ORDER BY letra'
-);
-
-
-$statement->execute([
-    'pergunta_id' => $question['id'],
-]);
-
-
-$alternatives = $statement->fetchAll();
+$formattedCode = substr($gameCode, 0, 3) . ' ' . substr($gameCode, 3, 3);
 
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#f3f4f6">
 
-<meta charset="UTF-8">
+    <title><?= htmlspecialchars($game['titulo']) ?></title>
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+    <link rel="stylesheet" href="/assets/css/jogo.css">
 
-<title>
-    Resposta
-</title>
-
-
-<link
-    rel="stylesheet"
-    href="/assets/css/style.css"
->
-
-
-<style>
-
-.answer-page {
-
-    min-height:100vh;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    padding:30px;
-
-    background:#f5f6f8;
-
-}
-
-
-.answer-card {
-
-    width:min(500px,100%);
-
-    background:white;
-
-    padding:35px;
-
-    border-radius:24px;
-
-    text-align:center;
-
-}
-
-
-.answer-title {
-
-     font-size:24px;
-
-    font-weight:700;
-
-    margin-bottom:20px;
-
-}
-
-
-.answer-question {
-
-    font-size:20px;
-
-    font-weight:700;
-
-    line-height:1.4;
-
-    margin-bottom:30px;
-
-}
-
-.answer-card h1 {
-
-    font-size:24px;
-
-    letter-spacing:0;
-
-}
-
-
-.answer-buttons {
-
-    display:grid;
-
-    gap:15px;
-
-}
-
-
-.answer-button {
-
-    padding:22px;
-
-    border-radius:14px;
-
-    border:1px solid #ddd;
-
-    background:white;
-
-    font-size:28px;
-
-    font-weight:800;
-
-}
-
-
-</style>
-
-
+    <?php require __DIR__ . '/../app/views/cores-marca.php'; ?>
 </head>
 
+<body class="tela-jogo">
 
-<body>
+    <main
+        class="jogo"
+        data-jogo
+        data-code="<?= htmlspecialchars($gameCode) ?>"
+    >
 
+        <header class="jogo-topo">
+            <img
+                src="<?= htmlspecialchars($branding['logo']) ?>"
+                alt="<?= htmlspecialchars($branding['logo_alt']) ?>"
+            >
 
-<main class="answer-page">
+            <div class="jogo-topo-info">
+                <strong><?= htmlspecialchars($participant['nome']) ?></strong>
+                Partida <?= htmlspecialchars($formattedCode) ?>
+            </div>
+        </header>
 
+        <section class="jogo-tela" data-tela="carregando">
+            <p class="jogo-texto">Conectando à partida...</p>
+        </section>
 
-<section class="answer-card">
+        <section class="jogo-tela" data-tela="aguardando" hidden>
+            <span class="jogo-rotulo">Você entrou!</span>
+            <h1 class="jogo-titulo"><?= htmlspecialchars($participant['nome']) ?></h1>
+            <p class="jogo-texto">Aguarde o administrador iniciar o jogo. Deixe esta tela aberta.</p>
+            <p class="jogo-texto"><strong data-campo="participantes">0</strong> na sala</p>
+        </section>
 
+        <section class="jogo-tela" data-tela="leitura" hidden>
+            <span class="jogo-rotulo" data-campo="numero">Pergunta</span>
+            <h1 class="jogo-titulo">Leia a pergunta na tela da apresentação</h1>
+            <p class="jogo-texto">As alternativas liberam em</p>
+            <div class="jogo-numero" data-campo="contagem">15</div>
+            <div class="jogo-linha"><span></span></div>
+        </section>
 
-<h1 class="answer-title">
+        <section class="jogo-tela jogo-tela-responder" data-tela="responder" hidden>
+            <div class="jogo-responder-topo">
+                <span data-campo="numero">Pergunta</span>
+                <span><span data-campo="contagem">20</span> s</span>
+            </div>
+            <div class="jogo-linha"><span></span></div>
 
-<?= htmlspecialchars($game['titulo']) ?>
+            <div class="botoes-resposta">
+                <button type="button" class="botao-resposta letra-a" data-letra="A" aria-label="Responder A">A</button>
+                <button type="button" class="botao-resposta letra-b" data-letra="B" aria-label="Responder B">B</button>
+                <button type="button" class="botao-resposta letra-c" data-letra="C" aria-label="Responder C">C</button>
+                <button type="button" class="botao-resposta letra-d" data-letra="D" aria-label="Responder D">D</button>
+            </div>
 
-</h1>
+            <p class="jogo-mensagem" data-campo="erro-envio" hidden></p>
+        </section>
 
+        <section class="jogo-tela" data-tela="respondida" hidden>
+            <span class="jogo-rotulo">Resposta registrada</span>
+            <div class="jogo-letra-escolhida" data-campo="letra">A</div>
+            <p class="jogo-texto">Aguarde o resultado...</p>
+        </section>
 
-<div class="answer-question">
+        <section class="jogo-tela" data-tela="esgotado" hidden>
+            <span class="jogo-rotulo">Tempo esgotado</span>
+            <h1 class="jogo-titulo">Você não respondeu esta pergunta</h1>
+            <p class="jogo-texto">Aguarde o resultado na tela da apresentação.</p>
+        </section>
 
-<?= htmlspecialchars($question['enunciado']) ?>
+        <section class="jogo-tela" data-tela="resultado" hidden>
+            <span class="jogo-selo" data-campo="selo">Resultado</span>
+            <h1 class="jogo-titulo" data-campo="resultado-titulo">Resultado</h1>
+            <p class="jogo-texto" data-campo="resultado-texto"></p>
+            <div class="jogo-placar">
+                <div><strong data-campo="acertos">0</strong>acertos</div>
+                <div><strong data-campo="pontos">0</strong>pontos</div>
+            </div>
+        </section>
 
-</div>
+        <section class="jogo-tela" data-tela="ranking" hidden>
+            <span class="jogo-rotulo" data-campo="ranking-rotulo">Ranking parcial</span>
+            <p class="jogo-texto">Sua posição</p>
+            <div class="jogo-numero" data-campo="posicao">-</div>
+            <p class="jogo-texto" data-campo="posicao-texto"></p>
+            <div class="jogo-placar">
+                <div><strong data-campo="acertos">0</strong>acertos</div>
+                <div><strong data-campo="pontos">0</strong>pontos</div>
+            </div>
+        </section>
 
+        <div class="jogo-conexao" data-campo="conexao" hidden>Sem conexão. Tentando de novo...</div>
 
-<?php if ($answered): ?>
+    </main>
 
-<div class="waiting-info">
-
-    <strong>
-        ✓ Resposta registrada
-    </strong>
-
-    Aguarde o resultado.
-
-</div>
-
-<?php else: ?>
-
-<div class="answer-buttons">
-
-<?php foreach ($alternatives as $alternative): ?>
-
-<form
-    action="/registrar-resposta.php"
-    method="post"
->
-
-<input
-    type="hidden"
-    name="code"
-    value="<?= htmlspecialchars($gameCode) ?>"
->
-
-<input
-    type="hidden"
-    name="alternative"
-    value="<?= htmlspecialchars($alternative['letra']) ?>"
->
-
-<button
-    type="submit"
-    class="answer-button"
->
-    <?= htmlspecialchars($alternative['letra']) ?>
-</button>
-
-</form>
-
-<?php endforeach; ?>
-
-</div>
-
-<?php endif; ?>
-
-
-</section>
-
-
-</main>
-
+    <script src="/assets/js/jogar.js"></script>
 
 </body>
 

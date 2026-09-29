@@ -208,6 +208,12 @@ $csrfToken = adminCsrfToken();
         Não foi possível excluir a pergunta.
     </div>
 
+<?php elseif ($error === 'partida_andamento'): ?>
+
+    <div class="admin-alert-error">
+        Há uma partida em andamento com este quiz. Encerre o jogo antes de editar, excluir ou reordenar perguntas.
+    </div>
+
 <?php endif; ?>
 
 
