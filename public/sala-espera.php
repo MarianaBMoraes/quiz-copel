@@ -119,20 +119,90 @@ $formattedCode =
 
                 <div class="waiting-info">
 
-                    <strong>
-                        <?= $totalParticipants ?>
-                    </strong>
+                     <strong id="participant-count">
+        <?= $totalParticipants ?>
+    </strong>
 
-                    participante<?= $totalParticipants === 1 ? '' : 's' ?>
-                    conectado<?= $totalParticipants === 1 ? '' : 's' ?>
+    participantes conectados
+
 
                 </div>
+
+                <div
+    id="game-started-message"
+    class="waiting-info"
+    style="display:none;"
+>
+    <strong>
+        O quiz começou!
+    </strong>
+
+    Preparando primeira pergunta...
+</div>
 
             </div>
 
         </section>
 
     </main>
+
+    <script>
+
+const gameCode = "<?= htmlspecialchars($gameCode) ?>";
+
+async function updateWaitingRoom() {
+
+    try {
+
+        const response = await fetch(
+            `/api/status-partida.php?code=${gameCode}`
+        );
+
+        const data = await response.json();
+
+
+        const counter = document.getElementById(
+            'participant-count'
+        );
+
+
+        if (counter) {
+            counter.textContent = data.participantes;
+        }
+
+        if (data.status !== 'aguardando') {
+
+    const message = document.getElementById(
+        'game-started-message'
+    );
+
+    if (message) {
+        message.style.display = 'block';
+    }
+
+}
+
+    } catch (error) {
+
+        console.error(
+            'Erro ao atualizar sala:',
+            error
+        );
+
+    }
+
+}
+
+
+updateWaitingRoom();
+
+
+setInterval(
+    updateWaitingRoom,
+    3000
+);
+
+</script>
 
 </body>
 

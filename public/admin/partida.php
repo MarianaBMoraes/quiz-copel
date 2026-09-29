@@ -389,6 +389,36 @@ $formattedCode =
 
 <?php endif; ?>
 
+  <?php if ($game['status'] === 'leitura'): ?>
+
+<form
+    action="/admin/iniciar-respostas.php"
+    method="post"
+>
+
+    <input
+        type="hidden"
+        name="csrf_token"
+        value="<?= htmlspecialchars($csrfToken) ?>"
+    >
+
+    <input
+        type="hidden"
+        name="game_code"
+        value="<?= htmlspecialchars($gameCode) ?>"
+    >
+
+    <button
+        type="submit"
+        class="admin-button-primary"
+    >
+        Iniciar respostas
+    </button>
+
+</form>
+
+<?php endif; ?>
+
                 </div>
 
             </div>
