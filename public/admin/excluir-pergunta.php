@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../app/auth.php';
+require_once __DIR__ . '/../../app/jogo.php';
 
 requireAdmin();
 
@@ -77,6 +78,17 @@ if (!$pergunta) {
 
 
 $quizId = (int) $pergunta['quiz_id'];
+
+// Com partida em andamento, mexer nas perguntas quebraria o jogo.
+if (jogoQuizEmAndamento($pdo, $quizId)) {
+    header(
+        'Location: /admin/perguntas.php'
+        . '?quiz_id=' . $quizId
+        . '&erro=partida_andamento'
+    );
+
+    exit;
+}
 
 
 /*

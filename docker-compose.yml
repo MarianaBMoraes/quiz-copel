@@ -1,0 +1,27 @@
+# Ambiente local: PHP + Apache em http://localhost:8080 e MySQL com o schema já aplicado.
+services:
+  app:
+    build: ./docker
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root-local
+      MYSQL_DATABASE: quiz_copel
+      MYSQL_USER: quiz_app
+      MYSQL_PASSWORD: quiz-local
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./scripts/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./scripts/migrations/001_admin_roles.sql:/docker-entrypoint-initdb.d/002_admin_roles.sql:ro
+      - dbdata:/var/lib/mysql
+
+volumes:
+  dbdata:
