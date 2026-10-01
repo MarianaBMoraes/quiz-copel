@@ -21,6 +21,7 @@ services:
     volumes:
       - ./scripts/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
       - ./scripts/migrations/001_admin_roles.sql:/docker-entrypoint-initdb.d/002_admin_roles.sql:ro
+      - ./scripts/migrations/002_pausar_tempo.sql:/docker-entrypoint-initdb.d/003_pausar_tempo.sql:ro
       - dbdata:/var/lib/mysql
 
 volumes:

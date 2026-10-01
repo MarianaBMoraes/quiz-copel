@@ -321,6 +321,14 @@ $formattedCode =
                     Próxima pergunta
                 </button>
 
+                <button type="button" class="admin-button-secondary" data-acao="pausar" hidden>
+                    Pausar tempo
+                </button>
+
+                <button type="button" class="admin-button-primary" data-acao="continuar" hidden>
+                    Continuar
+                </button>
+
                 <button type="button" class="admin-button-secondary" data-acao="encerrar_questao" hidden>
                     Encerrar questão
                 </button>

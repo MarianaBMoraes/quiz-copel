@@ -40,6 +40,14 @@ if ((int) $partida['pergunta_atual_id'] !== $perguntaId) {
     jogoResponderJson(['ok' => false, 'motivo' => 'fora_do_tempo'], 409);
 }
 
+// Leitura pausada: as alternativas ainda não abriram.
+if ($partida['status'] === 'pausado' && $partida['status_pausado'] === 'leitura') {
+    jogoResponderJson(['ok' => false, 'motivo' => 'cedo', 'espera_ms' => 1500], 409);
+}
+
+$pausadaRespondendo = $partida['status'] === 'pausado'
+    && $partida['status_pausado'] === 'respondendo';
+
 // O celular libera os botões pelo relógio. Se o relógio dele está adiantado,
 // avisa quanto falta pra ele reenviar sozinho. Se a leitura já acabou e
 // ninguém virou a fase ainda, esta requisição mesmo vira.
@@ -61,10 +69,10 @@ if ($partida['status'] === 'leitura') {
     $partida = jogoCarregarPartida($pdo, $codigo);
 }
 
-if (
-    $partida['status'] !== 'respondendo'
-    || $partida['agora_ms'] > $partida['fim_ms'] + JOGO_TOLERANCIA_MS
-) {
+$dentroDoTempo = $partida['status'] === 'respondendo'
+    && $partida['agora_ms'] <= $partida['fim_ms'] + JOGO_TOLERANCIA_MS;
+
+if (!$dentroDoTempo && !$pausadaRespondendo) {
     jogoResponderJson(['ok' => false, 'motivo' => 'fora_do_tempo'], 409);
 }
 
@@ -90,7 +98,9 @@ if (!$pergunta || !$alternativa) {
 }
 
 $limiteMs = $pergunta['tempo_resposta'] * 1000;
-$tempoMs = max(0, min($limiteMs, $partida['agora_ms'] - $partida['inicio_ms']));
+// Com o tempo pausado, o relógio da resposta parou no instante da pausa.
+$instante = $pausadaRespondendo ? $partida['pausada_ms'] : $partida['agora_ms'];
+$tempoMs = max(0, min($limiteMs, $instante - $partida['inicio_ms']));
 $correta = (bool) $alternativa['correta'];
 
 try {
@@ -116,9 +126,11 @@ try {
             :pontos
         FROM partidas
         WHERE id = :partida_id
-          AND status = :status
           AND pergunta_atual_id = :pergunta_atual_id
-          AND NOW(6) <= DATE_ADD(fase_termina_em, INTERVAL 1 SECOND)'
+          AND (
+                (status = :status AND NOW(6) <= DATE_ADD(fase_termina_em, INTERVAL 1 SECOND))
+             OR (status = :pausado AND status_pausado = :status_pausado)
+          )'
     );
 
     $statement->execute([
@@ -130,6 +142,8 @@ try {
         'pontos' => jogoCalcularPontos($correta, $tempoMs, $pergunta['tempo_resposta']),
         'partida_id' => $partida['id'],
         'status' => 'respondendo',
+        'pausado' => 'pausado',
+        'status_pausado' => 'respondendo',
         'pergunta_atual_id' => $perguntaId,
     ]);
 

@@ -106,6 +106,11 @@ $formattedCode = substr($gameCode, 0, 3) . ' ' . substr($gameCode, 3, 3);
 
                 <ol class="alternativas" data-campo="alternativas"></ol>
 
+                <div class="resultado-certa" data-campo="certa" hidden>
+                    <span>Resposta correta</span>
+                    <p><strong data-campo="certa-letra"></strong><span data-campo="certa-texto"></span></p>
+                </div>
+
                 <div class="aprendizado" data-campo="aprendizado" hidden>
                     <span>Aprendizado</span>
                     <p data-campo="explicacao"></p>
@@ -134,6 +139,8 @@ $formattedCode = substr($gameCode, 0, 3) . ' ' . substr($gameCode, 3, 3);
                     </div>
                 </div>
             </div>
+
+            <span class="palco-pausa" data-campo="pausa" hidden>Tempo pausado</span>
 
             <div class="palco-relogio" data-campo="relogio"></div>
         </footer>

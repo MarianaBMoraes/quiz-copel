@@ -9,6 +9,10 @@
 |
 | Fases: aguardando -> leitura -> respondendo -> resultado
 |        -> (ranking) -> leitura da próxima ... -> finalizado
+|
+| Pausa: leitura ou respondendo viram "pausado" (status_pausado guarda
+| qual era). Ao continuar, os horários da fase andam pra frente o tanto
+| que ficou parado, então o cronômetro retoma de onde parou.
 */
 
 // Aviso do PHP antes do JSON quebraria o painel e os celulares; vai só pro log.
@@ -31,9 +35,11 @@ function jogoCarregarPartida(PDO $pdo, string $codigo): ?array
             partidas.quiz_id,
             partidas.codigo,
             partidas.status,
+            partidas.status_pausado,
             partidas.pergunta_atual_id,
             UNIX_TIMESTAMP(partidas.fase_iniciada_em) * 1000 AS inicio_ms,
             UNIX_TIMESTAMP(partidas.fase_termina_em) * 1000 AS fim_ms,
+            UNIX_TIMESTAMP(partidas.pausada_em) * 1000 AS pausada_ms,
             UNIX_TIMESTAMP(NOW(6)) * 1000 AS agora_ms,
             quizzes.titulo,
             quizzes.subtitulo
@@ -54,7 +60,7 @@ function jogoCarregarPartida(PDO $pdo, string $codigo): ?array
         return null;
     }
 
-    foreach (['inicio_ms', 'fim_ms', 'agora_ms'] as $campo) {
+    foreach (['inicio_ms', 'fim_ms', 'pausada_ms', 'agora_ms'] as $campo) {
         $partida[$campo] = $partida[$campo] === null
             ? null
             : (int) round((float) $partida[$campo]);
@@ -304,7 +310,10 @@ function jogoMudarStatus(PDO $pdo, int $partidaId, array $statusPermitidos, stri
 
     $statement = $pdo->prepare(
         'UPDATE partidas
-         SET status = :novo_status' . $finalizada . '
+         SET
+            status = :novo_status,
+            status_pausado = NULL,
+            pausada_em = NULL' . $finalizada . '
          WHERE id = :id
            AND status IN (' . implode(', ', $marcadores) . ')'
     );
@@ -365,7 +374,13 @@ function jogoExecutarAcao(PDO $pdo, array $partida, string $acao): bool
                 && jogoIniciarPergunta($pdo, $partidaId, $primeira, ['aguardando']);
 
         case 'encerrar_questao':
-            return jogoMudarStatus($pdo, $partidaId, ['leitura', 'respondendo'], 'resultado');
+            return jogoMudarStatus($pdo, $partidaId, ['leitura', 'respondendo', 'pausado'], 'resultado');
+
+        case 'pausar':
+            return jogoPausar($pdo, $partida);
+
+        case 'continuar':
+            return jogoContinuar($pdo, $partidaId);
 
         case 'mostrar_ranking':
             return jogoMudarStatus($pdo, $partidaId, ['resultado'], 'ranking');
@@ -389,6 +404,67 @@ function jogoExecutarAcao(PDO $pdo, array $partida, string $acao): bool
     }
 
     return false;
+}
+
+/*
+| Só pausa com tempo sobrando. Antes, vira a fase se ela já venceu, pra
+| não congelar uma leitura que acabou (o celular já estaria nos botões).
+*/
+function jogoPausar(PDO $pdo, array $partida): bool
+{
+    if (jogoAvancar($pdo, $partida)) {
+        $partida = jogoCarregarPartida($pdo, $partida['codigo']);
+    }
+
+    $statement = $pdo->prepare(
+        'UPDATE partidas
+         SET
+            status_pausado = status,
+            status = :pausado,
+            pausada_em = NOW(6)
+         WHERE id = :id
+           AND status IN (:leitura, :respondendo)
+           AND fase_termina_em > NOW(6)'
+    );
+
+    $statement->execute([
+        'pausado' => 'pausado',
+        'id' => $partida['id'],
+        'leitura' => 'leitura',
+        'respondendo' => 'respondendo',
+    ]);
+
+    return $statement->rowCount() === 1;
+}
+
+// As atribuições rodam na ordem: os horários usam pausada_em antes de ela ser apagada.
+function jogoContinuar(PDO $pdo, int $partidaId): bool
+{
+    $statement = $pdo->prepare(
+        'UPDATE partidas
+         SET
+            status = status_pausado,
+            fase_iniciada_em = DATE_ADD(
+                fase_iniciada_em,
+                INTERVAL TIMESTAMPDIFF(MICROSECOND, pausada_em, NOW(6)) MICROSECOND
+            ),
+            fase_termina_em = DATE_ADD(
+                fase_termina_em,
+                INTERVAL TIMESTAMPDIFF(MICROSECOND, pausada_em, NOW(6)) MICROSECOND
+            ),
+            pausada_em = NULL,
+            status_pausado = NULL
+         WHERE id = :id
+           AND status = :pausado
+           AND status_pausado IS NOT NULL'
+    );
+
+    $statement->execute([
+        'id' => $partidaId,
+        'pausado' => 'pausado',
+    ]);
+
+    return $statement->rowCount() === 1;
 }
 
 /*
@@ -533,6 +609,8 @@ function jogoEstadoPublico(PDO $pdo, array $partida): array
         ] : null,
         'inicio_ms' => $partida['inicio_ms'],
         'fim_ms' => $partida['fim_ms'],
+        'status_pausado' => $partida['status_pausado'],
+        'pausada_ms' => $partida['pausada_ms'],
         'participantes' => jogoTotalParticipantes($pdo, (int) $partida['id']),
         'respondidos' => jogoTotalRespondidos($pdo, (int) $partida['id'], $partida['pergunta_atual_id'] ? (int) $partida['pergunta_atual_id'] : null),
     ];

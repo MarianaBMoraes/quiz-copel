@@ -178,19 +178,27 @@
     | conhecida (começa quando a leitura acaba), então o celular vira
     | sozinho no instante certo.
     */
+    /*
+    | Pausa: a tela continua na fase em que estava (leitura ou resposta),
+    | com o relógio parado no instante da pausa.
+    */
+    const pausado = () => estado && estado.status === 'pausado' && estado.status_pausado;
+    const statusBase = () => (pausado() ? estado.status_pausado : estado.status);
+    const instanteJogo = () => (pausado() ? estado.pausada_ms : agora());
+
     function janelaResposta() {
         if (!estado || !estado.pergunta) {
             return null;
         }
 
-        if (estado.status === 'leitura' && estado.fim_ms) {
+        if (statusBase() === 'leitura' && estado.fim_ms) {
             return {
                 inicio: estado.fim_ms,
                 fim: estado.fim_ms + estado.pergunta.tempo_resposta * 1000,
             };
         }
 
-        if (estado.status === 'respondendo') {
+        if (statusBase() === 'respondendo') {
             return { inicio: estado.inicio_ms, fim: estado.fim_ms };
         }
 
@@ -198,7 +206,7 @@
     }
 
     function faseLocal() {
-        if (['leitura', 'respondendo'].includes(estado.status) && !estado.pergunta) {
+        if (['leitura', 'respondendo'].includes(statusBase()) && !estado.pergunta) {
             return 'aguardando';
         }
 
@@ -208,9 +216,9 @@
             return estado.status;
         }
 
-        const instante = agora();
+        const instante = instanteJogo();
 
-        if (estado.status === 'leitura' && instante < janela.inicio) {
+        if (statusBase() === 'leitura' && instante < janela.inicio) {
             return 'leitura';
         }
 
@@ -229,6 +237,7 @@
         }
 
         preencher('participantes', String(estado.participantes));
+        raiz.querySelector('[data-campo="pausa"]').hidden = !pausado();
 
         const fase = faseLocal();
 
@@ -263,7 +272,7 @@
     function verificarPlanoB() {
         const janela = janelaResposta();
 
-        if (!janela || !estado.pergunta) {
+        if (!janela || !estado.pergunta || pausado()) {
             return;
         }
 
@@ -284,7 +293,7 @@
             return;
         }
 
-        const instante = agora();
+        const instante = instanteJogo();
 
         if (telaAtual === 'leitura') {
             const falta = Math.max(0, janela.inicio - instante);
