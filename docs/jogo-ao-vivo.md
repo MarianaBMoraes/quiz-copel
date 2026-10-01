@@ -22,6 +22,10 @@ aguardando → leitura (15 s) → respondendo (20 s) → resultado → [ranking]
 - **Resultado**, **ranking** e **próxima pergunta** são botões do painel.
 - Depois das perguntas 3 e 6 o painel destaca o botão **Mostrar ranking** (ranking parcial). Na última pergunta o botão vira **Ver ranking final**.
 - **Encerrar questão** e **Encerrar jogo** pedem confirmação.
+- **Pausar tempo** congela o cronômetro na leitura ou na resposta (por exemplo, quando o pessoal ainda não terminou de ler). O botão vira **Continuar**, e o tempo retoma de onde parou. A apresentação e os celulares mostram "Tempo pausado".
+  - Pausado na leitura: as alternativas continuam travadas até continuar.
+  - Pausado na resposta: quem já leu pode responder, e o tempo de quem responde conta só até o instante da pausa (ninguém perde pontos de velocidade por causa dela).
+  - **Encerrar questão** e **Encerrar jogo** também funcionam com o tempo pausado.
 
 Quem vira as fases pelo tempo é o painel ou a apresentação aberta no seu computador (cada um consulta o servidor a cada segundo). **Deixe pelo menos uma das duas abertas durante o jogo.**
 
@@ -93,7 +97,7 @@ docker compose exec app php scripts/seed-demo.php
 ## Publicar numa hospedagem compartilhada (cPanel, Hostinger)
 
 1. Crie o banco MySQL e o usuário no painel da hospedagem.
-2. No phpMyAdmin, rode `scripts/schema.sql` (apague a primeira linha `USE quiz_copel;` se o banco tiver outro nome) e depois `scripts/migrations/001_admin_roles.sql`.
+2. No phpMyAdmin, rode `scripts/schema.sql` (apague a primeira linha `USE quiz_copel;` se o banco tiver outro nome) e depois os arquivos de `scripts/migrations/` em ordem (`001_admin_roles.sql`, `002_pausar_tempo.sql`).
 3. Suba a **pasta inteira do projeto** para a pasta do domínio (menos `.git`, `docker` e `node_modules`). O `.htaccess` da raiz serve tudo de `public/` e esconde `app/`, `scripts/` e o `.env`.
 4. Crie o `.env` na raiz com os dados do banco (use o `.env.example` como modelo).
 5. Garanta que a pasta `public/estado` permite escrita (permissão 755).
@@ -124,6 +128,5 @@ Apague as partidas de teste pelo painel depois.
 
 - Relatório em `.xlsx` e PDF individual (hoje sai em `.csv`, que o Excel abre).
 - Baixar todos os individuais num `.zip`.
-- Botão de pausar no meio da pergunta.
 - Tela de histórico de partidas.
 - Tempos de leitura e resposta configuráveis pelo painel (o banco já guarda por pergunta).

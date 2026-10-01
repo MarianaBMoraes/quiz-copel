@@ -152,7 +152,7 @@ body.apresentacao {
 .palco-rodape {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
     align-items: center;
     gap: calc(var(--u) * 3);
     min-height: calc(var(--u) * 6.4);
@@ -221,6 +221,29 @@ body.apresentacao {
 
 .palco-relogio.acabando {
     color: var(--primary, #f58220);
+}
+
+.palco-relogio.pausado {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.palco-pausa {
+    padding: calc(var(--u) * 0.5) calc(var(--u) * 1.2);
+    border-radius: 999px;
+    background: var(--primary, #f58220);
+    color: var(--tinta);
+    font-size: calc(var(--u) * 1.1);
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    animation: pausa-pisca 1.6s ease-in-out infinite;
+}
+
+@keyframes pausa-pisca {
+    50% {
+        opacity: 0.55;
+    }
 }
 
 .palco-relogio small {
@@ -927,6 +950,20 @@ body.tela-jogo {
     text-align: center;
 }
 
+.jogo-pausa {
+    align-self: center;
+    margin-top: 12px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--primary, #f58220);
+    color: var(--tinta);
+    font-size: 14px;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 .jogo-conexao {
     position: fixed;
     left: 50%;
@@ -1033,6 +1070,10 @@ body.tela-jogo {
 
     .alternativa-barra {
         transition: none;
+    }
+
+    .palco-pausa {
+        animation: none;
     }
 
     @keyframes cena-some-suave {

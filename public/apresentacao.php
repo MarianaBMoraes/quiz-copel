@@ -135,6 +135,8 @@ $formattedCode = substr($gameCode, 0, 3) . ' ' . substr($gameCode, 3, 3);
                 </div>
             </div>
 
+            <span class="palco-pausa" data-campo="pausa" hidden>Tempo pausado</span>
+
             <div class="palco-relogio" data-campo="relogio"></div>
         </footer>
 

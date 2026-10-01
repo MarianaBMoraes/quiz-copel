@@ -119,19 +119,24 @@
         }
     }
 
+    // Pausa: a cena continua a mesma, com o relógio parado no instante da pausa.
+    const pausado = () => dados && dados.status === 'pausado' && dados.status_pausado;
+    const statusBase = () => (pausado() ? dados.status_pausado : dados.status);
+    const instanteJogo = () => (pausado() ? dados.pausada_ms : agora());
+
     function janelaResposta() {
         if (!dados || !dados.pergunta) {
             return null;
         }
 
-        if (dados.status === 'leitura' && dados.fim_ms) {
+        if (statusBase() === 'leitura' && dados.fim_ms) {
             return {
                 inicio: dados.fim_ms,
                 fim: dados.fim_ms + dados.pergunta.tempo_resposta * 1000,
             };
         }
 
-        if (dados.status === 'respondendo') {
+        if (statusBase() === 'respondendo') {
             return { inicio: dados.inicio_ms, fim: dados.fim_ms };
         }
 
@@ -139,15 +144,15 @@
     }
 
     function faseLocal() {
-        if (['leitura', 'respondendo', 'resultado'].includes(dados.status) && !dados.pergunta) {
+        if (['leitura', 'respondendo', 'resultado'].includes(statusBase()) && !dados.pergunta) {
             return 'aguardando';
         }
 
-        if (dados.status === 'leitura' && agora() >= dados.fim_ms) {
+        if (statusBase() === 'leitura' && instanteJogo() >= dados.fim_ms) {
             return 'respondendo';
         }
 
-        return dados.status;
+        return statusBase();
     }
 
     function mostrarCena(nome) {
@@ -166,6 +171,7 @@
         const mudou = chave !== cenaChave;
 
         cenaChave = chave;
+        campo('pausa').hidden = !pausado();
 
 
         campo('codigo-topo').hidden = ['aguardando', 'finalizado'].includes(fase);
@@ -398,7 +404,7 @@
             return;
         }
 
-        const instante = agora();
+        const instante = instanteJogo();
         let falta;
         let carga;
 
@@ -416,7 +422,8 @@
 
         const relogio = campo('relogio');
         relogio.textContent = String(Math.ceil(falta / 1000));
-        relogio.classList.toggle('acabando', fase === 'respondendo' && falta <= 5000);
+        relogio.classList.toggle('acabando', fase === 'respondendo' && falta <= 5000 && !pausado());
+        relogio.classList.toggle('pausado', Boolean(pausado()));
 
         const linha = campo('linha');
         linha.style.setProperty('--carga', carga.toFixed(4));

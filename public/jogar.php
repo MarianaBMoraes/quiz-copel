@@ -75,6 +75,8 @@ $formattedCode = substr($gameCode, 0, 3) . ' ' . substr($gameCode, 3, 3);
             </div>
         </header>
 
+        <div class="jogo-pausa" data-campo="pausa" hidden>Tempo pausado</div>
+
         <section class="jogo-tela" data-tela="carregando">
             <p class="jogo-texto">Conectando à partida...</p>
         </section>

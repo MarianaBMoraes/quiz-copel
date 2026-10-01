@@ -79,6 +79,8 @@ jogoResponderJson([
     'subtitulo' => $partida['subtitulo'],
     'inicio_ms' => $partida['inicio_ms'],
     'fim_ms' => $partida['fim_ms'],
+    'status_pausado' => $partida['status_pausado'],
+    'pausada_ms' => $partida['pausada_ms'],
     'participantes' => $estado['participantes'],
     'respondidos' => $estado['respondidos'],
     'total_perguntas' => $totalPerguntas,

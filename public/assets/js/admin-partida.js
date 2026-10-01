@@ -20,7 +20,7 @@
         resultado: 'mostrando o resultado',
         ranking: 'mostrando o ranking parcial',
         finalizado: 'jogo encerrado',
-        pausado: 'pausado',
+        pausado: 'tempo pausado',
     };
 
     const CONFIRMAR = {
@@ -125,14 +125,18 @@
             ? `${pergunta.indice} de ${pergunta.total}`
             : `0 de ${dados.total_perguntas}`;
         campo('participantes').textContent = numero(dados.participantes);
-        campo('respondidos').textContent = ['respondendo', 'resultado'].includes(fase)
+        const pausadoRespondendo = fase === 'pausado' && dados.status_pausado === 'respondendo';
+
+        campo('respondidos').textContent = ['respondendo', 'resultado'].includes(fase) || pausadoRespondendo
             ? `${numero(dados.respondidos)} / ${numero(dados.participantes)}`
             : '-';
 
         mostrarBotao('iniciar', fase === 'aguardando', true);
         botao('iniciar').disabled = ocupado || dados.total_perguntas === 0;
 
-        mostrarBotao('encerrar_questao', ['leitura', 'respondendo'].includes(fase), false);
+        mostrarBotao('pausar', ['leitura', 'respondendo'].includes(fase), false);
+        mostrarBotao('continuar', fase === 'pausado', true);
+        mostrarBotao('encerrar_questao', ['leitura', 'respondendo', 'pausado'].includes(fase), false);
         mostrarBotao('mostrar_ranking', fase === 'resultado' && !ultima, pedeRanking);
         mostrarBotao('proxima', ['resultado', 'ranking'].includes(fase), !pedeRanking || fase === 'ranking');
         botao('proxima').textContent = ultima ? 'Ver ranking final' : 'Próxima pergunta';
@@ -150,6 +154,15 @@
 
         const fase = faseLocal();
         let fim = null;
+
+        if (fase === 'pausado' && dados.status_pausado) {
+            // Tempo parado: mostra o que faltava no instante da pausa.
+            const segundos = Math.max(0, Math.ceil((dados.fim_ms - dados.pausada_ms) / 1000));
+            const leitura = dados.status_pausado === 'leitura' ? 'leitura ' : '';
+
+            campo('tempo').textContent = `${leitura}${segundos} s (pausado)`;
+            return;
+        }
 
         if (dados.status === 'leitura' && fase === 'leitura') {
             fim = dados.fim_ms;
