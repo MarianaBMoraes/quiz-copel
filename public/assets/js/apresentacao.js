@@ -52,15 +52,13 @@
     }
 
     /*
-    | Título ou pergunta longa demais: diminui a escala da cena até caber,
-    | em vez de cortar texto na tela do Teams.
+    | Texto longo: procura o maior tamanho de letra que cabe na tela, sem
+    | estreitar as colunas e sem cortar nada. Só a letra muda (--texto).
     */
     function caber() {
         const corpo = palco.querySelector('.palco-corpo');
         const titulo = palco.querySelector('.espera-titulo');
-        const transborda = () => corpo.scrollHeight > corpo.clientHeight + 1
-            || [...corpo.querySelectorAll('.alternativa, .aprendizado, .ranking-item')]
-                .some((elemento) => elemento.offsetParent && elemento.scrollHeight > elemento.clientHeight + 1);
+        const cena = palco.querySelector('[data-cena="pergunta"]');
 
         let ajuste = 1;
         titulo.style.setProperty('--ajuste', '1');
@@ -70,13 +68,56 @@
             titulo.style.setProperty('--ajuste', ajuste.toFixed(2));
         }
 
-        let fator = 1;
-        corpo.style.removeProperty('--u');
+        cena.style.setProperty('--texto', '1');
 
-        while (transborda() && fator > 0.6) {
-            fator -= 0.05;
-            corpo.style.setProperty('--u', `calc(min(1vw, 1.7778vh) * ${fator.toFixed(2)})`);
+        if (cena.hidden) {
+            return;
         }
+
+        // Limite = fim da área útil. Mede pela posição de layout (offsetTop
+        // somado até a área útil), que não muda com as animações de entrada.
+        const fundo = (elemento) => {
+            let altura = elemento.offsetHeight;
+            let atual = elemento;
+
+            while (atual && atual !== corpo) {
+                altura += atual.offsetTop;
+                atual = atual.offsetParent;
+            }
+
+            return atual === corpo ? altura : 0;
+        };
+
+        const transborda = () => {
+            const limite = corpo.clientHeight - parseFloat(getComputedStyle(corpo).paddingBottom) + 1;
+
+            return [...cena.querySelectorAll('.pergunta-enunciado, .pergunta-aviso, .alternativa, .aprendizado, .resultado-certa')]
+                .some((elemento) => elemento.offsetParent && (
+                    elemento.scrollHeight > elemento.clientHeight + 1
+                    || elemento.scrollWidth > elemento.clientWidth + 1
+                    || fundo(elemento) > limite
+                ));
+        };
+
+        if (!transborda()) {
+            return;
+        }
+
+        let cabe = 0.2;
+        let naoCabe = 1;
+
+        for (let volta = 0; volta < 9; volta += 1) {
+            const meio = (cabe + naoCabe) / 2;
+            cena.style.setProperty('--texto', meio.toFixed(3));
+
+            if (transborda()) {
+                naoCabe = meio;
+            } else {
+                cabe = meio;
+            }
+        }
+
+        cena.style.setProperty('--texto', cabe.toFixed(3));
     }
 
     function aviso(texto) {
@@ -249,9 +290,14 @@
             campo('alternativas').hidden = fase === 'leitura';
 
             const explicacao = (pergunta.explicacao || '').trim();
+            const certa = (pergunta.alternativas || []).find((alternativa) => alternativa.correta);
 
+            cena.dataset.aprendizado = explicacao ? '1' : '0';
             campo('aprendizado').hidden = !(fase === 'resultado' && explicacao);
             campo('explicacao').textContent = explicacao;
+            campo('certa').hidden = !(fase === 'resultado' && certa);
+            campo('certa-letra').textContent = certa ? `${certa.letra}.` : '';
+            campo('certa-texto').textContent = certa ? certa.texto : '';
 
             desenharAlternativas(fase);
         }
@@ -315,7 +361,7 @@
             if (fase === 'resultado') {
                 const selo = document.createElement('span');
                 selo.className = 'alternativa-selo';
-                selo.textContent = 'Resposta correta';
+                selo.textContent = 'Correta';
 
                 const total = document.createElement('span');
                 total.className = 'alternativa-total';
